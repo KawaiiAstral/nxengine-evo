@@ -51,10 +51,10 @@ include(GNUInstallDirs)
 
 IF(PLATFORM STREQUAL "vita")
     find_package(SDL2 CONFIG REQUIRED)
-    find_package(SDL2_mixer REQUIRED)
-    find_package(SDL2_image REQUIRED)
 ELSE()
-    if(EMSCRIPTEN)
+    # Detect Emscripten robustly: prefer CMAKE_SYSTEM_NAME check (emcmake sets it),
+    # but also accept an EMSCRIPTEN variable if present.
+    if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten" OR DEFINED EMSCRIPTEN)
         message(STATUS "Emscripten build → using builtin SDL2/SDL2_mixer/SDL2_image")
         # Emscripten provides SDL2/SDL2_mixer/SDL2_image via ports; do not try to find native packages
         set(SDL2_INCLUDE_DIR "")
@@ -146,7 +146,7 @@ IF(PLATFORM STREQUAL "pc")
             ENDIF()
         ENDIF()
     ENDIF()
-    if(NOT EMSCRIPTEN)
+    if(NOT (CMAKE_SYSTEM_NAME STREQUAL "Emscripten" OR DEFINED EMSCRIPTEN))
         target_link_libraries(nx ${SDL2_LIBRARY} ${SDL2_MIXER_LIBRARY} ${SDL2_IMAGE_LIBRARY} ${PNG_LIBRARY} ${JPEG_LIBRARY})
     endif()
 
