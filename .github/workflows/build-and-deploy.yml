@@ -1,0 +1,94 @@
+name: Build NXEngine Web and Deploy to Pages
+
+# push to main triggers build+deploy
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: Build (Emscripten)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cache emsdk
+        uses: actions/cache@v4
+        id: emsdk-cache
+        with:
+          path: ~/.emsdk
+          key: ${{ runner.os }}-emsdk-v1
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake python3 python3-pip git
+
+      - name: Set up Emscripten SDK
+        # mymindstorm/setup-emsdk is a widely used action; pin to a stable version
+        uses: mymindstorm/setup-emsdk@v13
+        with:
+          version: 3.1.56
+
+      - name: Print emsdk info
+        run: |
+          emcc --version
+          node --version
+          python3 --version
+
+      - name: Create build dir and configure
+        run: |
+          mkdir -p build
+          cd build
+          # emcmake ensures CMake generates Emscripten toolchain targets
+          emcmake cmake -DCMAKE_BUILD_TYPE=Release ..
+      - name: Build with emmake
+        run: |
+          cd build
+          emmake make -j$(nproc) || emmake make -j1
+      - name: Prepare dist directory
+        run: |
+          mkdir -p dist
+          # Copy our web shell files
+          cp -r web/* dist/
+          # Find the generated .js/.wasm/.data/.wasm.map files produced by Emscripten
+          # Commonly produces <project>.js and <project>.wasm
+          SHJS=$(find build -maxdepth 1 -type f -name "*.js" | head -n 1 || true)
+          SHWASM=$(find build -maxdepth 1 -type f -name "*.wasm" | head -n 1 || true)
+          SHHTML=$(find build -maxdepth 1 -type f -name "*.html" | head -n 1 || true)
+          echo "FOUND: $SHJS $SHWASM $SHHTML"
+          if [ -n "$SHJS" ]; then cp "$SHJS" dist/engine.js; fi
+          if [ -n "$SHWASM" ]; then cp "$SHWASM" dist/engine.wasm; fi
+          if [ -n "$SHHTML" ]; then cp "$SHHTML" dist/engine_shell.html; fi
+          ls -la dist
+
+      - name: Upload artifact (for debugging)
+        uses: actions/upload-artifact@v4
+        with:
+          name: nxengine-web-dist
+          path: dist/
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nxengine-web-dist
+          path: ./dist
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
