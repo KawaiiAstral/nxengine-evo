@@ -70,8 +70,24 @@ ELSE()
     endif()
 ENDIF()
 
-find_package(PNG REQUIRED)
-find_package(JPEG REQUIRED)
+# PNG/JPEG/ZLIB: when cross-compiling to Emscripten we must NOT try to find native libs;
+# Emscripten provides these via ports. Skip find_package in that case and set the variables empty.
+if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten" OR DEFINED EMSCRIPTEN)
+    message(STATUS "Emscripten build → skip find_package(PNG/JPEG/ZLIB), use emscripten ports")
+    # FindPNG expects PNG_PNG_INCLUDE_DIR and PNG_LIBRARY
+    set(PNG_PNG_INCLUDE_DIR "")
+    set(PNG_LIBRARY "")
+    # FindJPEG sets JPEG_INCLUDE_DIR and JPEG_LIBRARY
+    set(JPEG_INCLUDE_DIR "")
+    set(JPEG_LIBRARY "")
+    # ZLIB variables used by FindPNG/other modules
+    set(ZLIB_INCLUDE_DIR "")
+    set(ZLIB_LIBRARY "")
+else()
+    find_package(ZLIB REQUIRED)
+    find_package(PNG REQUIRED)
+    find_package(JPEG REQUIRED)
+endif()
 
 include_directories(${SDL2_INCLUDE_DIR})
 include_directories(${SDL2_MIXER_INCLUDE_DIR})
