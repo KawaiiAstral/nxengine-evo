@@ -49,16 +49,16 @@ set (nx_APP_ID org.nxengine.nxengine_evo)
 include(CheckCXXCompilerFlag)
 include(GNUInstallDirs)
 
-# Debugging aid (can be left or removed)
+# Debugging aid: print system name and EMSCRIPTEN variable to help CI debugging
 message(STATUS "CMAKE_SYSTEM_NAME='${CMAKE_SYSTEM_NAME}' EMSCRIPTEN='${EMSCRIPTEN}'")
 
 IF(PLATFORM STREQUAL "vita")
     find_package(SDL2 CONFIG REQUIRED)
 ELSE()
-    # Robust Emscripten detection: CMAKE_SYSTEM_NAME is usually set to "Emscripten" by emcmake/toolchain
+    # Robust Emscripten detection: CMAKE_SYSTEM_NAME is set by emcmake/toolchain,
+    # but allow EMSCRIPTEN var as well.
     if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten" OR DEFINED EMSCRIPTEN)
-        message(STATUS "Emscripten build → using builtin SDL2/SDL2_mixer/SDL2_image (do NOT call find_package for native libs)")
-        # Prevent FindSDL2* from failing by clearing native-related variables
+        message(STATUS "Emscripten build → using builtin SDL2/SDL2_mixer/SDL2_image (skip native find_package)")
         set(SDL2_INCLUDE_DIR "")
         set(SDL2_LIBRARY "")
         set(SDL2_MIXER_INCLUDE_DIR "")
@@ -72,16 +72,14 @@ ELSE()
     endif()
 ENDIF()
 
-# PNG / JPEG / ZLIB: when cross-compiling to Emscripten we should not try to find native libs.
-# Emscripten provides these via ports; skip find_package and set variables empty in that case.
+# PNG / JPEG / ZLIB: when cross-compiling to Emscripten we must NOT try to find native libs;
+# Emscripten provides ports for these. Only call find_package when NOT targeting Emscripten.
 if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten" OR DEFINED EMSCRIPTEN)
-    message(STATUS "Emscripten build → skip find_package(ZLIB/PNG/JPEG), use emscripten ports")
+    message(STATUS "Emscripten build → skip find_package(ZLIB/PNG/JPEG), using emscripten ports")
     set(ZLIB_INCLUDE_DIR "")
     set(ZLIB_LIBRARY "")
-    # FindPNG expects PNG_PNG_INCLUDE_DIR and PNG_LIBRARY
     set(PNG_PNG_INCLUDE_DIR "")
     set(PNG_LIBRARY "")
-    # FindJPEG sets JPEG_INCLUDE_DIR and JPEG_LIBRARY
     set(JPEG_INCLUDE_DIR "")
     set(JPEG_LIBRARY "")
 else()
@@ -167,6 +165,7 @@ IF(PLATFORM STREQUAL "pc")
     if(NOT (CMAKE_SYSTEM_NAME STREQUAL "Emscripten" OR DEFINED EMSCRIPTEN))
         target_link_libraries(nx ${SDL2_LIBRARY} ${SDL2_MIXER_LIBRARY} ${SDL2_IMAGE_LIBRARY} ${PNG_LIBRARY} ${JPEG_LIBRARY})
     endif()
+
 
 ELSEIF(PLATFORM STREQUAL "vita")
     add_definitions("-std=gnu++11")
