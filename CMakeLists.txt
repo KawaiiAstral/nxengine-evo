@@ -52,7 +52,13 @@ include(GNUInstallDirs)
 IF(PLATFORM STREQUAL "vita")
 find_package(SDL2 CONFIG REQUIRED)
 ELSE()
-find_package(SDL2 REQUIRED)
+if(EMSCRIPTEN)
+    # Emscripten には SDL2 が組み込み済み
+    set(SDL2_INCLUDE_DIR "")  # 空でOK
+    set(SDL2_LIBRARY "")      # 空でOK
+else()
+    find_package(SDL2 REQUIRED)
+ENDIF()
 ENDIF()
 find_package(SDL2_mixer REQUIRED)
 find_package(SDL2_image REQUIRED)
