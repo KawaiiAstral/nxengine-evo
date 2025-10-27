@@ -1,0 +1,5 @@
+body { background:#0b1220; color:#e6eef8; font-family: "Noto Sans JP", sans-serif; text-align:center; padding:20px; }
+.wrap { max-width:900px; margin:0 auto; }
+.dropzone { border:2px dashed #3b82f6; padding:18px; margin:10px auto; border-radius:6px; width:70%; cursor:pointer; background: rgba(255,255,255,0.02); }
+#canvas { display:block; margin: 14px auto; border:1px solid #333; background:#000; }
+#status { margin-top:8px; font-size:0.9rem; color:#cfe8ff; }
