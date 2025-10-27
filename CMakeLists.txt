@@ -51,9 +51,12 @@ include(GNUInstallDirs)
 
 IF(PLATFORM STREQUAL "vita")
     find_package(SDL2 CONFIG REQUIRED)
+    find_package(SDL2_mixer REQUIRED)
+    find_package(SDL2_image REQUIRED)
 ELSE()
     if(EMSCRIPTEN)
         message(STATUS "Emscripten build → using builtin SDL2/SDL2_mixer/SDL2_image")
+        # Emscripten provides SDL2/SDL2_mixer/SDL2_image via ports; do not try to find native packages
         set(SDL2_INCLUDE_DIR "")
         set(SDL2_LIBRARY "")
         set(SDL2_MIXER_INCLUDE_DIR "")
@@ -217,7 +220,7 @@ IF(PLATFORM STREQUAL "pc")
     set_property(TARGET extract PROPERTY OUTPUT_NAME nxextract)
 
     install(TARGETS nx extract RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-    install(DIRECTORY data DESTINATION ${CMAKE_INSTALL_DATADIR}/nxengine)
+    install(DIRECTORY data DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/nxengine)
 
     # Install XDG metadata on Desktop Linux like platforms
     IF(UNIX_LIKE)
